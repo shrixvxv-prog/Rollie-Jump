@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dino-Replacement Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f7f7f7;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #444;
+            overflow: hidden; /* Hide scrollbars */
+        }
+        #game-container {
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        canvas {
+            background-color: #fff;
+            display: block;
+            border-bottom: 2px dashed #ccc;
+        }
+        h1 {
+            margin-top: 0;
+            color: #333;
+        }
+        #score-container {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        #instructions, #game-over {
+            font-size: 1.2em;
+            color: #666;
+        }
+        #game-over {
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+        }
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>Dino-Replacement Game</h1>
+    <div id="score-container">Score: <span id="score">0</span></div>
+    <canvas id="gameCanvas" width="800" height="250"></canvas>
+    <div id="instructions">Press Space or Tap to Jump</div>
+    <div id="game-over">
+        <span>Game Over!</span>
+        <button id="restart-btn">Restart Game</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Game UI elements
+    const scoreEl = document.getElementById('score');
+    const instructionsEl = document.getElementById('instructions');
+    const gameOverEl = document.getElementById('game-over');
+    const restartBtn = document.getElementById('restart-btn');
+
+    // Game variables
+    let score = 0;
+    let gameSpeed = 5;
+    let isGameOver = false;
+    let obstacles = [];
+    let frame = 0;
+
+    // Player properties
+    const player = {
+        x: 50,
+        y: canvas.height - 60,
+        width: 60,
+        height: 60,
+        velocityY: 0,
+        gravity: 0.8,
+        jumpPower: -15,
+        isJumping: false,
+        image: new Image()
+    };
+
+    // Load player image from the uploaded file
+    player.image.src = 'data:image/png;base64,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';
+    player.image.onerror = () => {
+        // Fallback if image fails to load
+        console.error("Failed to load player image.");
+    };
+
+
+    // Obstacle properties
+    class Obstacle {
+        constructor(x, y, width, height) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+        }
+
+        draw() {
+            ctx.fillStyle = '#555'; // Obstacle color
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
+
+        update() {
+            this.x -= gameSpeed;
+            this.draw();
+        }
+    }
+
+    function spawnObstacle() {
+        const height = Math.random() * (60 - 20) + 20; // Random height
+        const width = 20;
+        const obstacle = new Obstacle(canvas.width, canvas.height - height, width, height);
+        obstacles.push(obstacle);
+    }
+
+    function handleJump(e) {
+        if (!player.isJumping && !isGameOver) {
+            // Check for space bar or touch start
+            if (e.code === 'Space' || e.type === 'touchstart' || e.type === 'mousedown') {
+                player.velocityY = player.jumpPower;
+                player.isJumping = true;
+                instructionsEl.style.display = 'none'; // Hide instructions on first jump
+            }
+        }
+    }
+
+    function updateScore() {
+        score++;
+        scoreEl.textContent = score;
+        if (score > 0 && score % 100 === 0) {
+            gameSpeed += 0.5; // Increase speed every 100 points
+        }
+    }
+
+    function detectCollision(a, b) {
+        return a.x < b.x + b.width &&
+               a.x + a.width > b.x &&
+               a.y < b.y + b.height &&
+               a.y + a.height > b.y;
+    }
+
+    function resetGame() {
+        score = 0;
+        gameSpeed = 5;
+        obstacles = [];
+        frame = 0;
+        player.y = canvas.height - player.height;
+        player.velocityY = 0;
+        player.isJumping = false;
+        isGameOver = false;
+        
+        scoreEl.textContent = score;
+        gameOverEl.style.display = 'none';
+        instructionsEl.style.display = 'block';
+
+        requestAnimationFrame(gameLoop);
+    }
+    
+    function gameOver() {
+        isGameOver = true;
+        gameOverEl.style.display = 'flex';
+    }
+
+
+    function gameLoop() {
+        if (isGameOver) {
+            return;
+        }
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Update and draw player
+        player.velocityY += player.gravity;
+        player.y += player.velocityY;
+
+        // Prevent player from falling through the ground
+        if (player.y > canvas.height - player.height) {
+            player.y = canvas.height - player.height;
+            player.velocityY = 0;
+            player.isJumping = false;
+        }
+        
+        // Draw the player image
+        if (player.image.complete && player.image.naturalHeight !== 0) {
+             ctx.drawImage(player.image, player.x, player.y, player.width, player.height);
+        } else {
+             // Fallback rectangle if image is not loaded
+             ctx.fillStyle = 'blue';
+             ctx.fillRect(player.x, player.y, player.width, player.height);
+        }
+
+
+        // Spawn and update obstacles
+        // The spawn rate is tied to game speed to become more challenging
+        const spawnRate = Math.max(50, 120 - Math.floor(gameSpeed * 5));
+        if (frame % spawnRate === 0) {
+            spawnObstacle();
+        }
+
+        for (let i = obstacles.length - 1; i >= 0; i--) {
+            const obs = obstacles[i];
+            obs.update();
+
+            // Collision detection
+            if (detectCollision(player, obs)) {
+                gameOver();
+            }
+
+            // Remove obstacles that are off-screen
+            if (obs.x + obs.width < 0) {
+                obstacles.splice(i, 1);
+            }
+        }
+        
+        updateScore();
+
+        frame++;
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Event Listeners
+    document.addEventListener('keydown', handleJump);
+    canvas.addEventListener('touchstart', handleJump);
+    canvas.addEventListener('mousedown', handleJump);
+    restartBtn.addEventListener('click', resetGame);
+
+    // Initial draw to show the character before starting
+    player.image.onload = () => {
+       ctx.drawImage(player.image, player.x, player.y, player.width, player.height);
+    };
+    
+    // Start game
+    gameLoop();
+</script>
+
+</body>
+</html>
+
