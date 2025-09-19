@@ -5,7 +5,97 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dino-Replacement Game</title>
     <style>
-        /* ... your CSS styles are here ... */
+        body {
+            background-color: #f7f7f7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Press Start 2P', cursive;
+            text-align: center;
+        }
+
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('https://fonts.gstatic.com/s/pressstart2p/v14/87lSwU4iYh7gKjAYJ9GAQ78y.woff2') format('woff2');
+        }
+
+        #game-container {
+            position: relative;
+            border: 5px solid #333;
+            border-radius: 10px;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        #score-container {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            font-size: 18px;
+            color: #555;
+            z-index: 10;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(to bottom, #d6d6d6 0%, #e0e0e0 100%);
+            border-bottom: 2px solid #333;
+        }
+
+        #instructions {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #888;
+        }
+
+        #game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+        }
+
+        #game-over span {
+            font-size: 32px;
+            font-weight: bold;
+            color: #d9534f;
+            margin-bottom: 15px;
+        }
+
+        #restart-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: 2px solid #5cb85c;
+            background-color: #5cb85c;
+            color: white;
+            border-radius: 5px;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+
+        #restart-btn:hover {
+            background-color: #4cae4c;
+            border-color: #4cae4c;
+            transform: translateY(-2px);
+        }
+
     </style>
 </head>
 <body>
@@ -68,6 +158,7 @@
             this.y = y;
             this.width = width;
             this.height = height;
+            this.passed = false; // Flag to check if the obstacle has been passed
         }
 
         draw() {
@@ -109,9 +200,9 @@
 
     function detectCollision(a, b) {
         return a.x < b.x + b.width &&
-               a.x + a.width > b.x &&
-               a.y < b.y + b.height &&
-               a.y + a.height > b.y;
+                a.x + a.width > b.x &&
+                a.y < b.y + b.height &&
+                a.y + a.height > b.y;
     }
 
     function resetGame() {
@@ -180,6 +271,14 @@
             // Collision detection
             if (detectCollision(player, obs)) {
                 gameOver();
+                return; // Stop the loop immediately on game over
+            }
+
+            // Check if the obstacle is past the player and update score
+            // This is the new, corrected logic
+            if (!obs.passed && obs.x + obs.width < player.x) {
+                updateScore();
+                obs.passed = true; // Mark as passed to prevent multiple score updates
             }
 
             // Remove obstacles that are off-screen
@@ -187,8 +286,6 @@
                 obstacles.splice(i, 1);
             }
         }
-        
-        updateScore();
 
         frame++;
         requestAnimationFrame(gameLoop);
@@ -211,5 +308,3 @@
 
 </body>
 </html>
-
-
